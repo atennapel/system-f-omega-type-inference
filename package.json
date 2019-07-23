@@ -1,0 +1,25 @@
+{
+  "name": "system-f-omega-type-inference",
+  "version": "1.0.0",
+  "description": "An attempt at type inference for System F-omega",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "runindex": "npm run build && node build/src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/atennapel/system-f-omega-type-inference.git"
+  },
+  "author": "Albert ten Napel",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/atennapel/system-f-omega-type-inference/issues"
+  },
+  "homepage": "https://github.com/atennapel/system-f-omega-type-inference#readme",
+  "devDependencies": {
+    "@types/node": "^12.6.8",
+    "typescript": "^3.5.3"
+  }
+}

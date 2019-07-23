@@ -1,3 +1,6 @@
+import { impossible } from './util';
+import { VType, showVType } from './vtypes';
+
 export type Type
   = TVar
   | TMeta
@@ -20,7 +23,7 @@ export const resetTMetaId = () => { tmetaId = 0 };
 export interface TMeta {
   readonly tag: 'TMeta';
   readonly id: TMetaId;
-  type: Type | null;
+  type: VType | null;
 }
 export const TMeta = (id: TMetaId): TMeta =>
   ({ tag: 'TMeta', id, type: null });
@@ -94,16 +97,55 @@ export interface TFun {
 export const TFun = (left: Type, right: Type): TFun =>
   TApp(TApp(TFunC, left), right) as TFun;
 export const isTFun = (t: Type): t is TFun =>
-  t.tag === 'TApp' && t.left.tag === 'TApp' && t.left.left === TFunC;
+  t.tag === 'TApp' && t.left.tag === 'TApp' && t.left.left.tag === 'TVar' && t.left.left.name === TFunC.name;
 export const tfunL = (t: TFun) => t.left.right;
 export const tfunR = (t: TFun) => t.right;
 export const tfunFrom = (ts: Type[]) =>
   ts.reduceRight((x, y) => TFun(y, x));
 export const tfun = (...ts: Type[]) => tfunFrom(ts);
-// unfoldTFun
+export const unfoldTFun = (t: Type): Type[] => {
+  const ts: Type[] = [];
+  while (isTFun(t)) {
+    ts.push(tfunL(t));
+    t = tfunR(t);
+  }
+  ts.push(t);
+  return ts;
+};
 
-// showType
+export const showTypeParen = (b: boolean, t: Type): string =>
+  b ? `(${showType(t)})` : showType(t);
+export const showType = (t: Type): string => {
+  if (t.tag === 'TVar') return t.name === TFunC.name ? `(->)` : t.name;
+  if (t.tag === 'TMeta')
+    return `?${t.id}${t.type ? `{${showVType(t.type)}}` : ''}`;
+  if (t.tag === 'TAbs') {
+    const [xs, b] = unfoldTAbs(t);
+    return `\\${xs.join(' ')}. ${showType(b)}`;
+  }
+  if (t.tag === 'TForall') {
+    const [xs, b] = unfoldTForall(t);
+    return `forall ${xs.join(' ')}. ${showType(b)}`;
+  }
+  if (isTFun(t)) {
+    const ts = unfoldTFun(t);
+    return ts.map(t => showTypeParen(isTFun(t) || t.tag === 'TAbs' || t.tag === 'TForall', t)).join(' -> ');
+  }
+  if (t.tag === 'TApp') {
+    const [f, as] = unfoldTApp(t);
+    return as.length === 0 ? showType(f) :
+      `${showTypeParen(f.tag !== 'TVar' && f.tag !== 'TMeta', f)} ${as.map(t => showTypeParen(t.tag !== 'TVar' && t.tag !== 'TMeta', t)).join(' ')}`;
+  }
+  return impossible('showType');
+};
 
-// prune
-
-// substTVar
+export const substTVar = (x: TVarName, s: Type, t: Type): Type => {
+  if (t.tag === 'TVar') return t.name === x ? s : t;
+  if (t.tag === 'TAbs')
+    return t.name === x ? t : TAbs(t.name, substTVar(x, s, t.body));
+  if (t.tag === 'TForall')
+    return t.name === x ? t : TForall(t.name, substTVar(x, s, t.body));
+  if (t.tag === 'TApp')
+    return TApp(substTVar(x, s, t.left), substTVar(x, s, t.right));
+  return t;
+};

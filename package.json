@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/atennapel/system-f-omega-type-inference#readme",
   "devDependencies": {
-    "@types/node": "^12.6.8",
-    "typescript": "^3.5.3"
+    "@types/node": "^12.12.7",
+    "typescript": "^3.7.2"
   }
 }
